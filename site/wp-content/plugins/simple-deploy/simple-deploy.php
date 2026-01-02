@@ -25,7 +25,9 @@ if (!defined('SIMPLE_DEPLOY_SCRIPT')) {
 add_action('admin_menu', 'simple_deploy_register_menu');
 add_action('admin_post_simple_deploy_trigger', 'simple_deploy_trigger');
 
-// Hook into Simply Static completion (different action names across versions).
+// Hook into Simply Static completion. Modern versions emit ss_completed.
+add_action('ss_completed', 'simple_deploy_after_generation', 10, 1);
+// Legacy/alt hooks for older Simply Static releases.
 add_action('ss_after_static_site_generation', 'simple_deploy_after_generation', 10, 1);
 add_action('simply_static_after_generate', 'simple_deploy_after_generation', 10, 1);
 add_action('simplystatic.afterGenerate', 'simple_deploy_after_generation', 10, 1);
@@ -60,6 +62,10 @@ function simple_deploy_page(): void
         <?php if ($status === 'queued') : ?>
             <div class="notice notice-info">
                 <p><strong>Deployment requested.</strong> Simply Static export has been triggered.</p>
+            </div>
+        <?php elseif ($status === 'error') : ?>
+            <div class="notice notice-error">
+                <p><strong>Export did not start.</strong> Ensure Simply Static is active and configured.</p>
             </div>
         <?php elseif ($status === 'done') : ?>
             <div class="notice notice-success">
@@ -107,21 +113,26 @@ function simple_deploy_trigger(): void
 
     check_admin_referer('simple_deploy_nonce', 'simple_deploy_nonce');
 
-    // Kick off Simply Static generation (supports both action names used by the plugin).
-    do_action('simply_static_generate');
-    do_action('simplystatic.generate');
+    $started = false;
+    if (class_exists('\\Simply_Static\\Plugin')) {
+        $started = \Simply_Static\Plugin::instance()->run_static_export(0, 'export');
+    }
 
-    wp_redirect(admin_url('admin.php?page=simple-deploy&status=queued'));
+    $status = $started ? 'queued' : 'error';
+    wp_redirect(admin_url('admin.php?page=simple-deploy&status=' . $status));
     exit;
 }
 
 /**
  * Callback after Simply Static finishes.
  *
- * @param string|false $archive_dir Path provided by Simply Static (may be false).
+ * @param string|false $maybe_archive_dir Path provided by Simply Static (may be false or status).
  */
-function simple_deploy_after_generation($archive_dir = ''): void
+function simple_deploy_after_generation($maybe_archive_dir = ''): void
 {
+    // Some hooks pass status, others pass archive dir; only treat string paths as archive dirs.
+    $archive_dir = (is_string($maybe_archive_dir) && strpos($maybe_archive_dir, DIRECTORY_SEPARATOR) !== false) ? $maybe_archive_dir : '';
+
     simple_deploy_write_trigger($archive_dir);
     $ran = simple_deploy_maybe_run_script();
 
