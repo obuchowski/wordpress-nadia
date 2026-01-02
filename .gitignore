@@ -1,0 +1,61 @@
+# Editor and OS cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Environment/config secrets
+.env
+.env.*
+*.env
+*.local
+!.env.example
+
+# Logs and dumps
+*.log
+*.sql
+*.sql.gz
+*.tar
+*.tar.gz
+*.zip
+
+# Web server artifacts
+site/.htaccess
+site/wp-config.php
+
+# WordPress core comes from the container image; only keep custom code in wp-content
+site/*
+!site/.gitkeep
+!site/wp-content/
+site/static-output/
+site/simple-deploy.trigger
+
+# Keep custom plugins/themes/mu-plugins if added
+site/wp-content/*
+!site/wp-content/mu-plugins/
+!site/wp-content/mu-plugins/**
+!site/wp-content/plugins/
+!site/wp-content/plugins/**
+!site/wp-content/themes/
+!site/wp-content/themes/**
+
+# Ignore generated WordPress content
+site/wp-content/uploads/
+site/wp-content/cache/
+site/wp-content/upgrade/
+site/wp-content/backups*/
+site/wp-content/languages/
+site/wp-content/advanced-cache.php
+site/wp-content/object-cache.php
+site/wp-content/debug.log
+site/wp-content/*.log
+
+# Ignore default bundled plugins/themes to avoid noise
+site/wp-content/plugins/akismet/
+site/wp-content/plugins/hello.php
+site/wp-content/themes/twenty*/
+
+# External static export repo (cloned separately)
+static-site-repo/
