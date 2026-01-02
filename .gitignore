@@ -57,5 +57,3 @@ site/wp-content/plugins/akismet/
 site/wp-content/plugins/hello.php
 site/wp-content/themes/twenty*/
 
-# External static export repo (cloned separately)
-static-site-repo/

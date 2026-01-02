@@ -13,7 +13,7 @@ if [[ -f "$ROOT_DIR/.env" ]]; then
 fi
 
 STATIC_DIR="${STATIC_OUTPUT_DIR:-$ROOT_DIR/site/static-output}"
-REPO_DIR="${STATIC_REPO_PATH:-$ROOT_DIR/static-site-repo}"
+PUBLIC_DIR="$ROOT_DIR/public"
 REMOTE="${GIT_REMOTE:-origin}"
 BRANCH="${GIT_BRANCH:-main}"
 COMMIT_MESSAGE="${COMMIT_MESSAGE:-Deploy: $(date -u +'%Y-%m-%dT%H:%M:%SZ')}"
@@ -23,26 +23,17 @@ if [[ ! -d "$STATIC_DIR" ]]; then
   exit 1
 fi
 
-if [[ ! -d "$REPO_DIR/.git" ]]; then
-  echo "Repo not found or not a git repo: $REPO_DIR" >&2
-  exit 1
-fi
+# Ensure public/ exists
+mkdir -p "$PUBLIC_DIR"
 
-pushd "$REPO_DIR" >/dev/null
-git fetch "$REMOTE" --prune
-git checkout "$BRANCH"
-git pull "$REMOTE" "$BRANCH"
-popd >/dev/null
-
+# Sync static output to public/
 rsync -a --delete \
   --exclude '.git' \
-  --exclude '.github' \
-  --exclude '.gitignore' \
-  --exclude '.gitattributes' \
-  "$STATIC_DIR"/ "$REPO_DIR"/
+  "$STATIC_DIR"/ "$PUBLIC_DIR"/
 
-pushd "$REPO_DIR" >/dev/null
-git add .
+# Commit and push from this repo
+cd "$ROOT_DIR"
+git add public/
 if git diff --cached --quiet; then
   echo "No changes to deploy."
   exit 0
@@ -50,7 +41,6 @@ fi
 
 git commit -m "$COMMIT_MESSAGE"
 git push "$REMOTE" "$BRANCH"
-popd >/dev/null
 
-echo "Deployment complete."
+echo "Deployment complete. Cloudflare Pages will pick up changes from public/"
 
