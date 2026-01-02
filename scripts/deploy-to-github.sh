@@ -23,6 +23,13 @@ if [[ ! -d "$STATIC_DIR" ]]; then
   exit 1
 fi
 
+if [[ -z "$(ls -A "$STATIC_DIR" 2>/dev/null)" ]]; then
+  echo "Static directory is empty: $STATIC_DIR" >&2
+  exit 1
+fi
+
+echo "Using static export: $STATIC_DIR"
+
 # Ensure public/ exists
 mkdir -p "$PUBLIC_DIR"
 

@@ -6,31 +6,27 @@ Project overview
 Key paths
 - Repo root: `/home/evgeni/projects-external/wordpress`
 - WordPress root (host): `/home/evgeni/projects-external/wordpress/site`
-- Static output (Simply Static destination): `/home/evgeni/projects-external/wordpress/site/static-output` (inside container: `/var/www/html/static-output`)
+- Static output (Simply Static destination): `/home/evgeni/projects-external/wordpress/site/static-output` (container: `/var/www/html/static-output`)
+- Public folder (committed, Cloudflare reads from here): `/home/evgeni/projects-external/wordpress/public`
 - Deploy script (host): `/home/evgeni/projects-external/wordpress/scripts/deploy-to-github.sh`
-- Trigger file written by plugin: `/home/evgeni/projects-external/wordpress/site/simple-deploy.trigger`
-- Static site Git repo clone: `/home/evgeni/projects-external/wordpress/static-site-repo` (ignored here; connect to Cloudflare Pages)
 
 Secrets and configuration
-- Keep secrets in `.env` (gitignored). Example variables: MYSQL_ROOT_PASSWORD, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD, WORDPRESS_DB_*, STATIC_OUTPUT_DIR, STATIC_REPO_PATH, GIT_REMOTE, GIT_BRANCH, CLOUDFLARE_* if needed.
+- Keep secrets in `.env` (gitignored). Variables: STATIC_OUTPUT_DIR, GIT_REMOTE, GIT_BRANCH, COMMIT_MESSAGE.
 - `.env.example` documents expected keys. Do not commit real secrets.
-- Update Podman compose to reference `.env` if you move DB creds out of YAML.
 
-Deployment workflow (MVP)
-1) In WP Admin, activate Simply Static (free) and configure output to `/var/www/html/static-output`.
-2) Click “Deploy Site” (Simple Deploy plugin). It triggers Simply Static generation and writes the trigger file.
-3) Host runs `scripts/deploy-to-github.sh` (manually or via a file watcher) to rsync static output into `static-site-repo`, commit, and push to GitHub.
-4) Cloudflare Pages is connected to that GitHub repo; build command empty, output dir `/`.
+Deployment workflow
+1) In WP Admin, Simply Static is configured to output to `/var/www/html/static-output`.
+2) User edits content, then clicks "Deploy Site" (Simple Deploy plugin) or runs Simply Static directly.
+3) Host runs `scripts/deploy-to-github.sh` to rsync `site/static-output/` → `public/`, commit, and push.
+4) Cloudflare Pages is connected to this repo; build command empty, output dir `public`.
 
 Simple Deploy plugin
 - Lives at `site/wp-content/plugins/simple-deploy/simple-deploy.php`.
-- Hooks Simply Static generation, writes trigger metadata, optionally runs a deploy script if `SIMPLE_DEPLOY_SCRIPT` points to an executable visible in the container.
+- Triggers Simply Static generation from WP Admin.
 - Admin page uses nonce + `manage_options` capability.
 
-Watch/automation hint
-- To automate after the trigger file is written, run a host-side watcher (e.g., `while inotifywait ... simple-deploy.trigger; do scripts/deploy-to-github.sh; done`) or execute the deploy script manually.
-
 Do/Do-not
-- Do not commit `.env`, `static-site-repo`, or generated `site/static-output`.
-- Respect Podman container paths vs. host paths; deploy script runs on host, not inside the container.
+- Do not commit `.env` or `site/static-output/`.
+- `public/` IS committed (contains the static site for Cloudflare Pages).
+- Deploy script runs on host, not inside the container.
 
