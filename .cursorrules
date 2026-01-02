@@ -1,32 +1,39 @@
 Project overview
 - Local WordPress served via Podman Compose at `/home/evgeni/projects/podman-compose.yml`.
 - Services: WordPress (port 8085) + MySQL (port 3306); site files mounted from `/home/evgeni/projects-external/wordpress/site` to `/var/www/html` in the container.
-- Goal: one-click static export (Simply Static plugin, free) and push to Cloudflare Pages via GitHub.
+- Goal: one-click static export (Simply Static plugin, free) and direct upload to Cloudflare Pages.
 
 Key paths
 - Repo root: `/home/evgeni/projects-external/wordpress`
 - WordPress root (host): `/home/evgeni/projects-external/wordpress/site`
 - Static output (Simply Static destination): `/home/evgeni/projects-external/wordpress/site/static-output` (container: `/var/www/html/static-output`)
-- Public folder (committed, Cloudflare reads from here): `/home/evgeni/projects-external/wordpress/public`
-- Deploy script (host): `/home/evgeni/projects-external/wordpress/scripts/deploy-to-github.sh`
 
 Secrets and configuration
-- Keep secrets in `.env` (gitignored). Variables: STATIC_OUTPUT_DIR, GIT_REMOTE, GIT_BRANCH, COMMIT_MESSAGE.
+- Keep secrets in `.env` (gitignored). Key variables:
+  - CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CLOUDFLARE_PAGES_PROJECT
+  - SIMPLE_DEPLOY_STATIC_DIR (container path)
 - `.env.example` documents expected keys. Do not commit real secrets.
+- WordPress container loads `.env` via `env_file` in podman-compose.
 
 Deployment workflow
 1) In WP Admin, Simply Static is configured to output to `/var/www/html/static-output`.
-2) User edits content, then clicks "Deploy Site" (Simple Deploy plugin) or runs Simply Static directly.
-3) Host runs `scripts/deploy-to-github.sh` to rsync `site/static-output/` → `public/`, commit, and push.
-4) Cloudflare Pages is connected to this repo; build command empty, output dir `public`.
+2) User clicks "Deploy Site" (Simple Deploy plugin).
+3) Simply Static generates static files.
+4) Plugin automatically uploads files directly to Cloudflare Pages API.
+5) Site is live within seconds.
 
 Simple Deploy plugin
 - Lives at `site/wp-content/plugins/simple-deploy/simple-deploy.php`.
-- Triggers Simply Static generation from WP Admin.
-- Admin page uses nonce + `manage_options` capability.
+- Triggers Simply Static, then uploads to Cloudflare Pages Direct Upload API.
+- Requires: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CLOUDFLARE_PAGES_PROJECT in environment.
+
+Cloudflare setup
+1) Create a Pages project in Cloudflare dashboard (can be empty, no GitHub needed).
+2) Get Account ID from dashboard URL.
+3) Create API Token with "Cloudflare Pages: Edit" permission.
+4) Add credentials to `.env` and restart container.
 
 Do/Do-not
 - Do not commit `.env` or `site/static-output/`.
-- `public/` IS committed (contains the static site for Cloudflare Pages).
-- Deploy script runs on host, not inside the container.
+- No GitHub/git needed for deployment - direct upload to Cloudflare.
 

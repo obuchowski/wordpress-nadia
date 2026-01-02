@@ -32,28 +32,13 @@ site/*
 site/static-output/
 site/simple-deploy.trigger
 
-# Keep custom plugins/themes/mu-plugins if added
+# Ignore all wp-content except our custom plugins
 site/wp-content/*
-!site/wp-content/mu-plugins/
-!site/wp-content/mu-plugins/**
 !site/wp-content/plugins/
-!site/wp-content/plugins/**
-!site/wp-content/themes/
-!site/wp-content/themes/**
+site/wp-content/plugins/*
+!site/wp-content/plugins/simple-deploy/
 
-# Ignore generated WordPress content
-site/wp-content/uploads/
-site/wp-content/cache/
-site/wp-content/upgrade/
-site/wp-content/backups*/
-site/wp-content/languages/
-site/wp-content/advanced-cache.php
-site/wp-content/object-cache.php
-site/wp-content/debug.log
-site/wp-content/*.log
-
-# Ignore default bundled plugins/themes to avoid noise
-site/wp-content/plugins/akismet/
-site/wp-content/plugins/hello.php
-site/wp-content/themes/twenty*/
+# Ignore all themes (installed from WP.org, don't need git)
+# To track a custom theme, add: !site/wp-content/themes/your-theme/
+site/wp-content/themes/
 
